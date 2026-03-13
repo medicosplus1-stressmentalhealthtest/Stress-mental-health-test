@@ -334,6 +334,7 @@ const questions=[
 
 let index=0;
 let answers=[];
+let paymentCompleted=false;
 
 function startTest(){
 
@@ -389,12 +390,16 @@ document.getElementById("payment").classList.remove("hidden");
 function payNow(){
 
 var options={
-key:"rzp_test_SQRWAp5WfzBOGU",
+key:"rzp_live_SQlUdrJ5qgJEl3",
 amount:"2500",
 currency:"INR",
 name:"Mental Health Assessment",
-handler:function(){
+handler:function(response){
+
+paymentCompleted=true;
+
 showResults();
+
 }
 };
 
@@ -494,7 +499,11 @@ plugins:[centerTextPlugin]
 }
 
 function showResults(){
-
+  
+if(!paymentCompleted){
+alert("Please complete payment to view results.");
+return;
+}
 
 document.getElementById("payment").classList.add("hidden");
 document.getElementById("results").classList.remove("hidden");
@@ -727,5 +736,6 @@ doc.save("Mental_Health_Report.pdf");
 
 </body>
 </html>
+
 
 
