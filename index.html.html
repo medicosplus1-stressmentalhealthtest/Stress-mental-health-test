@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comprehensive Mental Health Assessment</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<style>
+body{
+font-family:Arial,Helvetica,sans-serif;
+margin:0;
+background:linear-gradient(135deg,#141e30,#243b55);
+color:white;
+}
+
+.container{
+max-width:900px;
+margin:auto;
+padding:30px;
+}
+
+.card{
+background:rgba(255,255,255,0.08);
+backdrop-filter:blur(10px);
+padding:25px;
+border-radius:15px;
+margin-bottom:20px;
+box-shadow:0 10px 30px rgba(0,0,0,0.4);
+}
+
+button{
+background:#00c6ff;
+border:none;
+padding:12px 22px;
+border-radius:8px;
+color:white;
+font-size:16px;
+cursor:pointer;
+}
+
+.progress{height:8px;background:#333;border-radius:5px;margin-bottom:20px}
+.progress-bar{height:8px;background:#00ffc6;width:0%;border-radius:5px}
+
+.options label{display:block;margin:8px 0}
+
+.hidden{display:none}
+
+.scale-box{background:rgba(0,0,0,0.25);padding:15px;border-radius:10px;margin-bottom:15px}
+
+.chart-grid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:20px;
+justify-items:center;
+}
+
+.chart-grid canvas{
+width:150px !important;
+height:150px !important;
+}
+.meter{
+width:100%;
+height:25px;
+background:linear-gradient(to right,
+#2ecc71 0%,
+#f1c40f 25%,
+#e67e22 50%,
+#e74c3c 75%,
+#8e0000 100%);
+border-radius:10px;
+position:relative;
+margin-top:10px;
+}
+
+.pointer{
+width:4px;
+height:35px;
+background:white;
+position:absolute;
+top:-5px;
+border-radius:2px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Comprehensive Mental Health Assessment</h1>
+
+<div id="consent" class="card">
+<h2>Consent & Privacy Agreement</h2>
+
+<p>This mental health screening tool evaluates emotional wellbeing, psychological stress, anxiety symptoms, burnout and emotional regulation patterns. This tool is intended for educational and screening purposes and does not replace professional diagnosis.</p>
+
+<p>Your responses are confidential and used only for generating your psychological report.</p>
+
+<label><input type="checkbox" id="agree"> I understand and agree to the consent, privacy policy and terms.</label>
+<br><br>
+<button onclick="startTest()">Start Assessment</button>
+</div>
+
+<div id="test" class="hidden">
+<div class="progress"><div class="progress-bar" id="progress"></div></div>
+
+<div class="card">
+<div id="question"></div>
+
+<div class="scale-box">
+<b>Response Scale Explanation</b>
+<ul>
+<li>0 – Not at all (You did not experience this at all)</li>
+<li>1 – Several days (You experienced this occasionally)</li>
+<li>2 – More than half the days (You experienced this frequently)</li>
+<li>3 – Nearly every day (This problem occurs almost daily)</li>
+</ul>
+</div>
+
+<div class="options">
+<label><input type="radio" name="ans" value="0"> 0</label>
+<label><input type="radio" name="ans" value="1"> 1</label>
+<label><input type="radio" name="ans" value="2"> 2</label>
+<label><input type="radio" name="ans" value="3"> 3</label>
+</div>
+
+<br>
+<button onclick="nextQuestion()">Next</button>
+</div>
+</div>
+
+<div id="payment" class="hidden card">
+<h2>Unlock Your Psychological Report</h2>
+<p>Your responses have been recorded. Pay ₹25 to unlock your full mental health dashboard and downloadable report.</p>
+<button onclick="payNow()">Pay ₹25 & Unlock Results</button>
+</div>
+
+<div id="results" class="hidden">
+
+<div class="card">
+<h2>Patient Information</h2>
+<label>Name</label><br>
+<input id="pname" style="width:100%;padding:8px"><br><br>
+
+<label>Age</label><br>
+<input id="page" style="width:100%;padding:8px"><br><br>
+
+<label>Email</label><br>
+<input id="pemail" style="width:100%;padding:8px">
+</div>
+
+<div class="card">
+<h2>Mental Health Profile</h2>
+<h3>Severity Meters</h3>
+
+<div>Depression
+<div class="meter">
+<div id="depPointer" class="pointer"></div>
+</div>
+</div>
+
+<br>
+
+<div>Anxiety
+<div class="meter">
+<div id="anxPointer" class="pointer"></div>
+</div>
+</div>
+
+<br>
+
+<div>Stress
+<div class="meter">
+<div id="stressPointer" class="pointer"></div>
+</div>
+</div>
+
+<div class="chart-grid">
+
+<div>
+<b>Depression</b>
+<canvas id="chartDep"></canvas>
+</div>
+
+<div>
+<b>Anxiety</b>
+<canvas id="chartAnx"></canvas>
+</div>
+
+<div>
+<b>Stress</b>
+<canvas id="chartStress"></canvas>
+</div>
+
+<div>
+<b>Burnout</b>
+<canvas id="chartBurn"></canvas>
+</div>
+
+<div>
+<b>Emotion</b>
+<canvas id="chartEmotion"></canvas>
+</div>
+
+</div>
+</div>
+
+<div class="card">
+<h2>Psychological Interpretation</h2>
+<p id="report"></p>
+
+<h3>Severity Interpretation Guide</h3>
+<table border="1" cellpadding="6">
+<tr>
+<th>Category</th>
+<th>Depression</th>
+<th>Anxiety</th>
+<th>Stress</th>
+</tr>
+
+<tr>
+<td>Normal</td>
+<td>0–4</td>
+<td>0–3</td>
+<td>0–7</td>
+</tr>
+
+<tr>
+<td>Mild</td>
+<td>5–6</td>
+<td>4–5</td>
+<td>8–9</td>
+</tr>
+
+<tr>
+<td>Moderate</td>
+<td>7–10</td>
+<td>6–7</td>
+<td>10–12</td>
+</tr>
+
+<tr>
+<td>Severe</td>
+<td>11–13</td>
+<td>8–9</td>
+<td>13–16</td>
+</tr>
+
+<tr>
+<td>Extremely Severe</td>
+<td>14+</td>
+<td>10+</td>
+<td>17+</td>
+</tr>
+</table>
+
+<br>
+
+<button onclick="downloadPDF()">Download Detailed Psychological Report</button>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+const questions=[
+"Loss of interest in activities: Over the past two weeks have you noticed reduced interest or pleasure in activities you normally enjoy such as hobbies, social interactions, or work tasks?",
+"Persistent sadness: Have you been experiencing ongoing sadness, emptiness, or feelings of hopelessness most days?",
+"Fatigue or low energy: Do you feel tired or lacking energy even after adequate rest or sleep?",
+"Feelings of worthlessness: Do you often feel guilty, inadequate, or like you are a burden to others?",
+"Difficulty concentrating: Have you experienced problems focusing on reading, work, or daily tasks?",
+"Loss of purpose: Do you feel life lacks meaning or direction?",
+"Psychomotor changes: Have you felt unusually slowed down or restless?",
+"Negative thinking about the future: Do you feel pessimistic about what lies ahead?",
+"Social withdrawal: Have you been avoiding social interactions or isolating yourself?",
+"Feeling like a burden: Do you feel others would be better off without you?",
+
+"General nervousness: Do you frequently feel nervous or anxious without a clear reason?",
+"Excessive worrying: Do you worry excessively about everyday issues like finances, health, or work?",
+"Difficulty controlling worry: When worries arise do you find it difficult to stop thinking about them?",
+"Restlessness: Do you often feel restless or unable to relax?",
+"Panic sensations: Have you experienced sudden episodes of intense fear or panic?",
+"Heart palpitations: Do you notice your heart beating rapidly during anxious moments?",
+"Shortness of breath: Do you feel breathless during stressful situations?",
+"Avoidance behavior: Do you avoid certain situations because they trigger anxiety?",
+"Muscle tension: Do you frequently experience tightness in neck, shoulders or body due to stress?",
+"Anticipatory fear: Do you constantly expect something bad may happen?",
+
+"Feeling overwhelmed: Do responsibilities feel difficult to manage?",
+"Difficulty relaxing: Do you struggle to relax even during free time?",
+"Irritability: Do small issues make you feel unusually irritated?",
+"Stress sensitivity: Do minor problems feel disproportionately stressful?",
+"Mental exhaustion: Do you feel mentally drained after daily activities?",
+"Work pressure: Do work or academic responsibilities cause significant pressure?",
+"Difficulty unwinding: Do you find it difficult to mentally disconnect from stress?",
+"Constant pressure: Do you feel constantly under pressure to perform?",
+"Emotional overreaction: Do you sometimes react strongly to small events?",
+"Frequent frustration: Do you often feel frustrated during daily life?",
+
+"Emotional exhaustion: Do you feel emotionally drained after interacting with others or performing tasks?",
+"Persistent tiredness: Do you feel exhausted even after rest?",
+"Work detachment: Have you started feeling detached from work or responsibilities?",
+"Reduced productivity: Do you feel less productive than usual?",
+"Motivation loss: Do you find it hard to start tasks?",
+"Cynicism: Do you feel increasingly negative about your responsibilities?",
+"Difficulty focusing: Do you struggle to maintain attention for long periods?",
+"Overwhelmed expectations: Do expectations from others feel overwhelming?",
+"Physical fatigue: Do you feel physically worn out frequently?",
+"Mental fatigue: Do you feel mentally tired or burnt out?",
+
+"Emotional control: Do you struggle to manage your emotions effectively?",
+"Sensitivity to criticism: Do you react strongly to criticism?",
+"Emotional hurt: Do small comments hurt you emotionally?",
+"Anger management: Do you find it difficult to control anger?",
+"Emotional instability: Do your emotions fluctuate frequently?",
+"Overwhelming emotions: Do emotions sometimes feel too intense to handle?",
+"Difficulty calming down: After stress does it take long to feel calm again?",
+"Mood swings: Do you experience noticeable mood changes during the day?",
+"Strong reactions: Do stressful events trigger strong emotional responses?",
+"Coping difficulty: Do you feel it is difficult to cope with life challenges?"
+];
+
+let index=0;
+let answers=[];
+
+function startTest(){
+
+if(!document.getElementById("agree").checked){
+alert("Please accept consent to continue");
+return;
+}
+
+document.getElementById("consent").classList.add("hidden");
+document.getElementById("test").classList.remove("hidden");
+
+loadQuestion();
+
+}
+
+function loadQuestion(){
+
+document.getElementById("question").innerHTML="<b>Question "+(index+1)+" of 50</b><br><br>"+questions[index];
+
+
+let percent=(index/50)*100;
+
+document.getElementById("progress").style.width=percent+"%";
+
+}
+
+function nextQuestion(){
+
+let selected=document.querySelector('input[name="ans"]:checked');
+
+if(!selected){
+alert("Please select an answer");
+return;
+}
+
+answers.push(parseInt(selected.value));
+
+selected.checked=false;
+
+index++;
+
+if(index<questions.length){
+loadQuestion();
+}else{
+
+document.getElementById("test").classList.add("hidden");
+document.getElementById("payment").classList.remove("hidden");
+
+}
+
+}
+
+function payNow(){
+
+var options={
+key:"rzp_test_SQRWAp5WfzBOGU",
+amount:"2500",
+currency:"INR",
+name:"Mental Health Assessment",
+handler:function(){
+showResults();
+}
+};
+
+var rzp=new Razorpay(options);
+rzp.open();
+
+}
+
+function sum(start,end){
+return answers.slice(start,end).reduce((a,b)=>a+b,0);
+}
+
+function interpretScore(type,score){
+
+if(type=="depression"){
+if(score<=4) return "Normal";
+if(score<=6) return "Mild";
+if(score<=10) return "Moderate";
+if(score<=13) return "Severe";
+return "Extremely Severe";
+}
+
+if(type=="anxiety"){
+if(score<=3) return "Normal";
+if(score<=5) return "Mild";
+if(score<=7) return "Moderate";
+if(score<=9) return "Severe";
+return "Extremely Severe";
+}
+
+if(type=="stress"){
+if(score<=7) return "Normal";
+if(score<=9) return "Mild";
+if(score<=12) return "Moderate";
+if(score<=16) return "Severe";
+return "Extremely Severe";
+}
+
+return "";
+
+}
+function createChart(canvasId,label,value){
+
+const centerTextPlugin={
+id:"centerText",
+beforeDraw(chart){
+
+const {width,height,ctx}=chart;
+
+ctx.restore();
+
+const fontSize=(height/90).toFixed(2);
+
+ctx.font=fontSize+"em Arial";
+
+ctx.textBaseline="middle";
+
+const text=value;
+
+const textX=Math.round((width-ctx.measureText(text).width)/2);
+
+const textY=height/2;
+
+ctx.fillStyle="#8B0000";
+
+ctx.fillText(text,textX,textY);
+
+ctx.save();
+
+}
+};
+
+new Chart(document.getElementById(canvasId),{
+
+type:"doughnut",
+
+data:{
+labels:[label,"Remaining"],
+datasets:[{
+data:[value,30-value],
+backgroundColor:["#00ffc6","#2c3e50"]
+}]
+},
+
+options:{
+responsive:false,
+cutout:"70%",
+plugins:{
+legend:{display:false}
+}
+},
+
+plugins:[centerTextPlugin]
+
+});
+
+}
+
+function showResults(){
+
+
+document.getElementById("payment").classList.add("hidden");
+document.getElementById("results").classList.remove("hidden");
+
+let depression=sum(0,10);
+let anxiety=sum(10,20);
+let stress=sum(20,30);
+document.getElementById("depPointer").style.left=(depression/30*100)+"%";
+document.getElementById("anxPointer").style.left=(anxiety/30*100)+"%";
+document.getElementById("stressPointer").style.left=(stress/30*100)+"%";
+
+let burnout=sum(30,40);
+let emotion=sum(40,50);
+
+createChart("chartDep","Depression",depression);
+createChart("chartAnx","Anxiety",anxiety);
+createChart("chartStress","Stress",stress);
+createChart("chartBurn","Burnout",burnout);
+createChart("chartEmotion","Emotion",emotion);
+
+let report="";
+
+report+="This report summarises your mental health profile across depression, anxiety, stress, burnout and emotional regulation domains. ";
+
+if(depression>18) report+="Your responses suggest significant depressive symptoms including low mood, fatigue, reduced interest in activities and negative thoughts about the future. ";
+
+if(anxiety>18) report+="Your responses indicate heightened anxiety patterns such as persistent worry, physiological tension and anticipatory fear. ";
+
+if(stress>18) report+="Your stress score suggests you may be experiencing elevated psychological pressure and difficulty relaxing. ";
+
+if(burnout>18) report+="Burnout indicators suggest emotional exhaustion and reduced productivity related to prolonged stress. ";
+
+if(emotion>18) report+="Your responses indicate challenges in emotional regulation including mood swings and difficulty calming down after stressful events. ";
+
+if(report=="") report="Overall your mental health indicators appear within normal range. Continue maintaining healthy lifestyle, sleep, exercise and social support.";
+
+
+report+="\n\nThis report provides screening level insight and should not replace professional clinical evaluation. If you experience persistent distress consider consulting a mental health professional.";
+
+
+
+document.getElementById("report").innerText=report;
+
+}
+function drawSeverityMeter(doc,label,score,y){
+
+doc.setFontSize(11);
+doc.text(label,20,y);
+
+let x=60;
+let width=120;
+let segment=width/5;
+
+/* colored segments */
+
+doc.setFillColor(46,204,113);
+doc.rect(x,y-4,segment,6,'F');
+
+doc.setFillColor(241,196,15);
+doc.rect(x+segment,y-4,segment,6,'F');
+
+doc.setFillColor(230,126,34);
+doc.rect(x+segment*2,y-4,segment,6,'F');
+
+doc.setFillColor(231,76,60);
+doc.rect(x+segment*3,y-4,segment,6,'F');
+
+doc.setFillColor(142,0,0);
+doc.rect(x+segment*4,y-4,segment,6,'F');
+
+/* pointer */
+
+let pointer=(score/30)*width;
+
+doc.setDrawColor(0,0,0);
+doc.line(x+pointer,y-6,x+pointer,y+6);
+
+}
+
+function downloadPDF(){
+
+const { jsPDF } = window.jspdf;
+
+const doc=new jsPDF();
+
+let name=document.getElementById("pname").value||"N/A";
+let age=document.getElementById("page").value||"N/A";
+
+let depression=sum(0,10);
+let anxiety=sum(10,20);
+let stress=sum(20,30);
+let burnout=sum(30,40);
+let emotion=sum(40,50);
+
+let y=20;
+
+/* PAGE 1 */
+
+doc.setFontSize(18);
+doc.text("Mental Health Assessment Report",20,y);
+y+=10;
+
+doc.setFontSize(12);
+
+doc.text("Patient Information",20,y);
+y+=8;
+
+doc.text("Name: "+name,20,y);
+y+=6;
+
+doc.text("Age: "+age,20,y);
+y+=10;
+
+doc.text("Assessment Scores",20,y);
+y+=8;
+
+doc.text("Depression: "+depression+" ("+interpretScore("depression",depression)+")",20,y);
+y+=6;
+
+doc.text("Anxiety: "+anxiety+" ("+interpretScore("anxiety",anxiety)+")",20,y);
+y+=6;
+
+doc.text("Stress: "+stress+" ("+interpretScore("stress",stress)+")",20,y);
+y+=6;
+
+doc.text("Burnout: "+burnout,20,y);
+y+=6;
+
+doc.text("Emotional Regulation: "+emotion,20,y);
+y+=15;
+
+doc.setFontSize(14);
+doc.text("Severity Meters",20,y);
+
+y+=10;
+
+drawSeverityMeter(doc,"Depression",depression,y);
+y+=12;
+
+drawSeverityMeter(doc,"Anxiety",anxiety,y);
+y+=12;
+
+drawSeverityMeter(doc,"Stress",stress,y);
+
+
+y+=12;
+
+/* CHARTS */
+
+doc.text("Score Visualization",20,y);
+y+=6;
+
+let depChart=document.getElementById("chartDep").toDataURL("image/png");
+let anxChart=document.getElementById("chartAnx").toDataURL("image/png");
+let stressChart=document.getElementById("chartStress").toDataURL("image/png");
+let burnChart=document.getElementById("chartBurn").toDataURL("image/png");
+let emoChart=document.getElementById("chartEmotion").toDataURL("image/png");
+
+doc.addImage(depChart,"PNG",20,y,30,30);
+doc.addImage(anxChart,"PNG",60,y,30,30);
+doc.addImage(stressChart,"PNG",100,y,30,30);
+
+y+=40;
+
+doc.addImage(burnChart,"PNG",20,y,30,30);
+doc.addImage(emoChart,"PNG",60,y,30,30);
+
+/* PAGE 2 */
+
+doc.addPage();
+
+y=20;
+
+doc.setFontSize(16);
+doc.text("Psychological Interpretation",20,y);
+
+y+=10;
+
+doc.setFontSize(12);
+
+const text=doc.splitTextToSize(document.getElementById("report").innerText,170);
+
+doc.text(text,20,y);
+
+y+=text.length*7+10;
+
+/* Interpretation Table */
+
+doc.setFontSize(14);
+doc.text("Severity Interpretation Guide",20,y);
+
+y+=5;
+
+doc.autoTable({
+
+startY:y,
+
+head:[
+["Category","Depression","Anxiety","Stress"]
+],
+
+body:[
+["Normal","0–4","0–3","0–7"],
+["Mild","5–6","4–5","8–9"],
+["Moderate","7–10","6–7","10–12"],
+["Severe","11–13","8–9","13–16"],
+["Extremely Severe","14+","10+","17+"]
+],
+
+theme:"grid",
+
+styles:{
+fontSize:10,
+cellPadding:3
+}
+
+});
+
+y = doc.lastAutoTable.finalY + 10;
+
+y+=10;
+
+doc.setFontSize(10);
+doc.text("Disclaimer: This assessment is a psychological screening tool and does not substitute clinical diagnosis.",20,y,{maxWidth:170});
+
+doc.save("Mental_Health_Report.pdf");
+
+}
+</script>
+
+</body>
+</html>
+
